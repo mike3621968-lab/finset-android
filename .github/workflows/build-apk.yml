@@ -1,0 +1,40 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Gradle 실행 권한 부여
+        run: chmod +x ./gradlew
+        continue-on-error: true
+
+      - name: Gradle Wrapper 없으면 생성
+        run: |
+          if [ ! -f "./gradlew" ]; then
+            gradle wrapper --gradle-version 8.7
+            chmod +x ./gradlew
+          fi
+
+      - name: 디버그 APK 빌드
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: APK 업로드 (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinSet-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
