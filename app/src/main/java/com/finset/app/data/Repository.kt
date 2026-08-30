@@ -18,6 +18,9 @@ class FinSetRepository(private val db: AppDatabase) {
         db.stockDao().update(stock.copy(isInterested = interested))
     }
     suspend fun getStock(ticker: String): StockEntity? = db.stockDao().getByTicker(ticker)
+    suspend fun updateStockPrice(stock: StockEntity, price: String, changePercent: String, isPositive: Boolean) {
+        db.stockDao().update(stock.copy(price = price, changePercent = changePercent, isPositive = isPositive))
+    }
 
     // 뉴스
     fun observeFeaturedNews(): Flow<List<NewsEntity>> = db.newsDao().observeFeatured()
