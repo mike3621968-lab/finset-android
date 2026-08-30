@@ -1,7 +1,25 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+}
+
+// local.properties(로컬 개발용, git에 커밋되지 않음) 또는 환경변수(GitHub Actions CI용)에서
+// KIS App Key/Secret을 읽어와 소스코드에 평문으로 남기지 않고 BuildConfig 상수로 주입한다.
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+fun localProp(key: String, envKey: String? = null, default: String = ""): String {
+    val fromFile = localProps.getProperty(key)
+    if (!fromFile.isNullOrBlank()) return fromFile
+    if (envKey != null) {
+        val fromEnv = System.getenv(envKey)
+        if (!fromEnv.isNullOrBlank()) return fromEnv
+    }
+    return default
 }
 
 android {
@@ -14,6 +32,10 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
+
+        buildConfigField("String", "KIS_APP_KEY", "\"${localProp("kis.appkey", "KIS_APP_KEY")}\"")
+        buildConfigField("String", "KIS_APP_SECRET", "\"${localProp("kis.appsecret", "KIS_APP_SECRET")}\"")
+        buildConfigField("String", "KIS_BASE_URL", "\"${localProp("kis.baseUrl", "KIS_BASE_URL", "https://openapi.koreainvestment.com:9443")}\"")
     }
 
     buildTypes {
@@ -33,6 +55,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -72,6 +95,12 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    // 한국투자증권 Open API 연동 (실시간 시세)
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

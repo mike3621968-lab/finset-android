@@ -12,6 +12,7 @@ import com.finset.app.data.FinSetRepository
 import com.finset.app.data.OptionMetricsEntity
 import com.finset.app.data.StockEntity
 import com.finset.app.data.seedDatabaseIfEmpty
+import com.finset.app.kis.KisPriceRepository
 import com.finset.app.notification.NotificationHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -27,6 +28,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = AppDatabase.getInstance(application)
     private val repo = FinSetRepository(db)
+    private val kisRepo = KisPriceRepository(application)
 
     init {
         // 서버 없이: 최초 실행 시 하드코딩 데이터를 로컬 DB에 1회 삽입
@@ -133,6 +135,55 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         tradeJob?.cancel()
         tradeJob = null
         _simulationEnabled.value = false
+    }
+
+    // ── 한국투자증권 Open API 실시간 시세 연동 ──
+    private val _livePriceEnabled = MutableStateFlow(false)
+    val livePriceEnabled: StateFlow<Boolean> = _livePriceEnabled.asStateFlow()
+
+    private val _liveConnectionError = MutableStateFlow<String?>(null)
+    val liveConnectionError: StateFlow<String?> = _liveConnectionError.asStateFlow()
+
+    private var livePriceJob: Job? = null
+
+    fun toggleLivePrice() {
+        if (_livePriceEnabled.value) stopLivePrice() else startLivePrice()
+    }
+
+    private fun startLivePrice() {
+        if (livePriceJob != null) return
+        _livePriceEnabled.value = true
+        _liveConnectionError.value = null
+        livePriceJob = viewModelScope.launch {
+            while (true) {
+                runCatching { pollLivePrices() }
+                    .onFailure { _liveConnectionError.value = "시세 조회 실패: ${it.message}" }
+                delay(15000)
+            }
+        }
+    }
+
+    private fun stopLivePrice() {
+        livePriceJob?.cancel()
+        livePriceJob = null
+        _livePriceEnabled.value = false
+    }
+
+    private suspend fun pollLivePrices() {
+        val targets = interestedStocks.value.filter { kisRepo.isSupported(it.ticker) }
+        if (targets.isEmpty()) {
+            _liveConnectionError.value = "실시간 연동 대상 종목이 없어요 (지수 SPX/NDX/VIX는 미지원)"
+            return
+        }
+        var anySuccess = false
+        for (stock in targets) {
+            val live = kisRepo.fetchPrice(stock.ticker)
+            if (live != null) {
+                repo.updateStockPrice(stock, live.price, live.changePercent, live.isPositive)
+                anySuccess = true
+            }
+        }
+        _liveConnectionError.value = if (anySuccess) null else "시세 조회 실패 - APP KEY/SECRET 또는 네트워크를 확인해주세요"
     }
 
     private suspend fun simulateNewsTick() {

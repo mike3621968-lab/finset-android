@@ -34,6 +34,8 @@ fun HomeScreen(
     val myNews by viewModel.myNews.collectAsState()
     val allNews by viewModel.allNews.collectAsState()
     val simulationEnabled by viewModel.simulationEnabled.collectAsState()
+    val livePriceEnabled by viewModel.livePriceEnabled.collectAsState()
+    val liveConnectionError by viewModel.liveConnectionError.collectAsState()
     var filter by remember { mutableStateOf("mine") } // "mine" | "all"
 
     LazyColumn(modifier = Modifier.fillMaxSize().background(BgColor)) {
@@ -49,6 +51,25 @@ fun HomeScreen(
                     Text("핀셋", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Navy)
                 }
                 SimulationToggle(enabled = simulationEnabled, onClick = { viewModel.toggleSimulation() })
+            }
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(20.dp, 0.dp, 20.dp, 4.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                LivePriceToggle(enabled = livePriceEnabled, onClick = { viewModel.toggleLivePrice() })
+            }
+        }
+        if (livePriceEnabled && liveConnectionError != null) {
+            item {
+                Text(
+                    liveConnectionError ?: "",
+                    fontSize = 10.5.sp,
+                    color = UpColor,
+                    modifier = Modifier.fillMaxWidth().padding(20.dp, 0.dp, 20.dp, 4.dp)
+                )
             }
         }
 
@@ -163,6 +184,33 @@ private fun TestPopupChip(text: String, accent: Color, modifier: Modifier = Modi
             color = accent,
             modifier = Modifier.fillMaxWidth(),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun LivePriceToggle(enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(if (enabled) Color(0xFFEAF7EE) else Color.White)
+            .border(1.dp, if (enabled) Color(0xFF2FA84F) else LineColor, RoundedCornerShape(999.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 11.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(if (enabled) Color(0xFF2FA84F) else TextTertiary)
+        )
+        Spacer(Modifier.width(5.dp))
+        Text(
+            if (enabled) "실시간 시세 ON (KIS)" else "실시간 시세 OFF",
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (enabled) Color(0xFF2FA84F) else TextSecondary
         )
     }
 }
