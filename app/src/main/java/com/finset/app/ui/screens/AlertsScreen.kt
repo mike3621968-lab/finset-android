@@ -2,6 +2,7 @@ package com.finset.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,13 +15,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.finset.app.data.AlertEntity
 import com.finset.app.ui.components.FinChip
 import com.finset.app.ui.components.FinTopBar
 import com.finset.app.ui.theme.*
 import com.finset.app.viewmodel.MainViewModel
 
 @Composable
-fun AlertsScreen(viewModel: MainViewModel) {
+fun AlertsScreen(
+    viewModel: MainViewModel,
+    onAlertClick: (AlertEntity) -> Unit
+) {
     val alerts by viewModel.alerts.collectAsState()
     var filter by remember { mutableStateOf("all") } // all | news | trade
 
@@ -52,6 +57,7 @@ fun AlertsScreen(viewModel: MainViewModel) {
                         .clip(RoundedCornerShape(14.dp))
                         .background(Color.White)
                         .border(1.dp, LineColor, RoundedCornerShape(14.dp))
+                        .clickable(onClick = { onAlertClick(alert) })
                         .padding(14.dp)
                 ) {
                     Box(

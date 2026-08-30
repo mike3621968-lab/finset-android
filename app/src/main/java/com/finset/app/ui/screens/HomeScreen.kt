@@ -33,19 +33,22 @@ fun HomeScreen(
     val featured by viewModel.featuredNews.collectAsState()
     val myNews by viewModel.myNews.collectAsState()
     val allNews by viewModel.allNews.collectAsState()
+    val simulationEnabled by viewModel.simulationEnabled.collectAsState()
     var filter by remember { mutableStateOf("mine") } // "mine" | "all"
 
     LazyColumn(modifier = Modifier.fillMaxSize().background(BgColor)) {
         item {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(20.dp, 14.dp, 20.dp, 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     FinSetMark(markSize = 30.dp, cornerRadius = 9.dp)
                     Spacer(Modifier.width(8.dp))
                     Text("핀셋", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Navy)
                 }
+                SimulationToggle(enabled = simulationEnabled, onClick = { viewModel.toggleSimulation() })
             }
         }
 
@@ -99,5 +102,32 @@ private fun FeaturedNewsCard(news: NewsEntity, onClick: () -> Unit) {
         Text(news.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White, lineHeight = 19.sp)
         Spacer(Modifier.height(10.dp))
         Text("${news.source} · ${news.timeLabel}", fontSize = 10.5.sp, color = Color(0xFFB9C8DE))
+    }
+}
+
+@Composable
+private fun SimulationToggle(enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(if (enabled) Navy else Color.White)
+            .border(1.dp, if (enabled) Navy else LineColor, RoundedCornerShape(999.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(7.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(if (enabled) Gold else TextTertiary)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            if (enabled) "시뮬레이션 ON" else "시뮬레이션 OFF",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (enabled) Color.White else TextSecondary
+        )
     }
 }

@@ -24,9 +24,13 @@ class FinSetRepository(private val db: AppDatabase) {
     fun observeMyNews(): Flow<List<NewsEntity>> = db.newsDao().observeMyNews()
     fun observeAllNews(): Flow<List<NewsEntity>> = db.newsDao().observeAllNews()
     suspend fun getNews(id: Long): NewsEntity? = db.newsDao().getById(id)
+    suspend fun getUnmatchedNews(): List<NewsEntity> = db.newsDao().getUnmatchedOnce()
+    suspend fun markNewsMatched(id: Long) = db.newsDao().markMatched(id)
 
     // 옵션 지표
     fun observeOptionMetrics(ticker: String): Flow<OptionMetricsEntity?> = db.optionMetricsDao().observeByTicker(ticker)
+    suspend fun getOptionMetricsOnce(ticker: String): OptionMetricsEntity? = db.optionMetricsDao().getOnce(ticker)
+    suspend fun updateOptionMetrics(metrics: OptionMetricsEntity) = db.optionMetricsDao().update(metrics)
     suspend fun setAlertEnabled(metrics: OptionMetricsEntity, enabled: Boolean) {
         db.optionMetricsDao().update(metrics.copy(alertEnabled = enabled))
     }
@@ -34,4 +38,5 @@ class FinSetRepository(private val db: AppDatabase) {
     // 알림함
     fun observeAlerts(): Flow<List<AlertEntity>> = db.alertDao().observeAll()
     fun observeAlertsByType(type: String): Flow<List<AlertEntity>> = db.alertDao().observeByType(type)
+    suspend fun insertAlert(alert: AlertEntity): Long = db.alertDao().insert(alert)
 }

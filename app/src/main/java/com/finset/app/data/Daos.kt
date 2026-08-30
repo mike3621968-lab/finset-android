@@ -60,6 +60,12 @@ interface NewsDao {
     @Query("SELECT * FROM news WHERE id = :id LIMIT 1")
     suspend fun getById(id: Long): NewsEntity?
 
+    @Query("SELECT * FROM news WHERE isFeatured = 0 AND isMatched = 0")
+    suspend fun getUnmatchedOnce(): List<NewsEntity>
+
+    @Query("UPDATE news SET isMatched = 1 WHERE id = :id")
+    suspend fun markMatched(id: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(news: List<NewsEntity>)
 
@@ -71,6 +77,9 @@ interface NewsDao {
 interface OptionMetricsDao {
     @Query("SELECT * FROM option_metrics WHERE ticker = :ticker LIMIT 1")
     fun observeByTicker(ticker: String): Flow<OptionMetricsEntity?>
+
+    @Query("SELECT * FROM option_metrics WHERE ticker = :ticker LIMIT 1")
+    suspend fun getOnce(ticker: String): OptionMetricsEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(metrics: List<OptionMetricsEntity>)
@@ -92,6 +101,9 @@ interface AlertDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(alerts: List<AlertEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(alert: AlertEntity): Long
 
     @Query("SELECT COUNT(*) FROM alerts")
     suspend fun count(): Int
