@@ -80,6 +80,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val lastVtState = mutableMapOf<String, String>()
     private val regimeByTicker = mutableMapOf<String, String>() // "bull" | "bear"
 
+    // 방향성 시그널(진입/청산) 전용 팝업 이벤트 - 앱이 켜져있을 때 눈에 띄는 다이얼로그로 표시
+    private val _popupEvent = MutableStateFlow<TradeSignalPopup?>(null)
+    val popupEvent: StateFlow<TradeSignalPopup?> = _popupEvent.asStateFlow()
+
+    fun consumePopup() {
+        _popupEvent.value = null
+    }
+
+    /**
+     * 시뮬레이션이 켜져 있을 때, 실제 조건 충족을 기다리지 않고
+     * 원하는 시점에 바로 팝업을 띄워보기 위한 테스트용 함수.
+     * kind: "bull_entry" | "bear_entry" | "bull_exit" | "bear_exit"
+     */
+    fun fireTestPopup(kind: String) {
+        val pool = interestedStocks.value.ifEmpty { stocks.value }
+        val stock = pool.randomOrNull() ?: return
+        val (title, message) = when (kind) {
+            "bull_entry" -> "상승진입 시그널" to "제로감마 상향 돌파 - 롱 진입 유리한 구간 진입 (테스트 발동)"
+            "bear_entry" -> "하락진입 시그널" to "제로감마 하향 이탈 - 숏 진입 유리한 구간 진입 (테스트 발동)"
+            "bull_exit" -> "상승청산 시그널" to "콜월 도달 - 보유 롱 포지션 익절/청산 검토 (테스트 발동)"
+            else -> "하락청산 시그널" to "풋월 도달 - 보유 숏 포지션 청산(커버) 검토 (테스트 발동)"
+        }
+        _popupEvent.value = TradeSignalPopup(stock.ticker, stock.name, stock.price, title, message)
+    }
+
     fun toggleSimulation() {
         if (_simulationEnabled.value) stopSimulation() else startSimulation()
     }
@@ -199,34 +224,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (zgSideAfter) {
                     if (regimeByTicker[ticker] != "bull") {
                         regimeByTicker[ticker] = "bull"
-                        fireTradeAlert(
-                            ticker, "$ticker 상승진입 시그널",
-                            "제로감마(${metrics.zeroGamma}) 상향 돌파 - 롱 진입 유리한 구간 진입"
-                        )
+                        val msg = "제로감마(${metrics.zeroGamma}) 상향 돌파 - 롱 진입 유리한 구간 진입"
+                        fireTradeAlert(ticker, "$ticker 상승진입 시그널", msg)
+                        _popupEvent.value = TradeSignalPopup(ticker, stock.name, stock.price, "상승진입 시그널", msg)
                     }
                 } else {
                     if (regimeByTicker[ticker] != "bear") {
                         regimeByTicker[ticker] = "bear"
-                        fireTradeAlert(
-                            ticker, "$ticker 하락진입 시그널",
-                            "제로감마(${metrics.zeroGamma}) 하향 이탈 - 숏 진입 유리한 구간 진입"
-                        )
+                        val msg = "제로감마(${metrics.zeroGamma}) 하향 이탈 - 숏 진입 유리한 구간 진입"
+                        fireTradeAlert(ticker, "$ticker 하락진입 시그널", msg)
+                        _popupEvent.value = TradeSignalPopup(ticker, stock.name, stock.price, "하락진입 시그널", msg)
                     }
                 }
             }
 
             // ④ 진입 이후 반대편 월 도달 → 청산 시그널
             if (newWallZone == "call_breach" && oldWallZone != "call_breach" && regimeByTicker[ticker] == "bull") {
-                fireTradeAlert(
-                    ticker, "$ticker 상승청산 시그널",
-                    "콜월(${metrics.callWall}) 도달 - 보유 롱 포지션 익절/청산 검토"
-                )
+                val msg = "콜월(${metrics.callWall}) 도달 - 보유 롱 포지션 익절/청산 검토"
+                fireTradeAlert(ticker, "$ticker 상승청산 시그널", msg)
+                _popupEvent.value = TradeSignalPopup(ticker, stock.name, stock.price, "상승청산 시그널", msg)
             }
             if (newWallZone == "put_breach" && oldWallZone != "put_breach" && regimeByTicker[ticker] == "bear") {
-                fireTradeAlert(
-                    ticker, "$ticker 하락청산 시그널",
-                    "풋월(${metrics.putWall}) 도달 - 보유 숏 포지션 청산(커버) 검토"
-                )
+                val msg = "풋월(${metrics.putWall}) 도달 - 보유 숏 포지션 청산(커버) 검토"
+                fireTradeAlert(ticker, "$ticker 하락청산 시그널", msg)
+                _popupEvent.value = TradeSignalPopup(ticker, stock.name, stock.price, "하락청산 시그널", msg)
             }
         }
     }
@@ -259,3 +280,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 }
+
+/** 방향성 매매 시그널(진입/청산) 발생 시 앱 안에서 보여줄 팝업 정보 */
+data class TradeSignalPopup(
+    val ticker: String,
+    val stockName: String,
+    val price: String,
+    val signalType: String, // "상승진입 시그널" | "하락진입 시그널" | "상승청산 시그널" | "하락청산 시그널"
+    val message: String
+)

@@ -52,6 +52,20 @@ fun HomeScreen(
             }
         }
 
+        if (simulationEnabled) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(20.dp, 0.dp, 20.dp, 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    TestPopupChip("상승진입", UpColor, Modifier.weight(1f)) { viewModel.fireTestPopup("bull_entry") }
+                    TestPopupChip("하락진입", DownColor, Modifier.weight(1f)) { viewModel.fireTestPopup("bear_entry") }
+                    TestPopupChip("상승청산", UpColor, Modifier.weight(1f)) { viewModel.fireTestPopup("bull_exit") }
+                    TestPopupChip("하락청산", DownColor, Modifier.weight(1f)) { viewModel.fireTestPopup("bear_exit") }
+                }
+            }
+        }
+
         item {
             Text("오늘의 주요뉴스", fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(20.dp, 14.dp, 20.dp, 10.dp))
         }
@@ -128,6 +142,27 @@ private fun SimulationToggle(enabled: Boolean, onClick: () -> Unit) {
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             color = if (enabled) Color.White else TextSecondary
+        )
+    }
+}
+
+@Composable
+private fun TestPopupChip(text: String, accent: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(accent.copy(alpha = 0.10f))
+            .border(1.dp, accent.copy(alpha = 0.35f), RoundedCornerShape(999.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = accent,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
     }
 }
