@@ -231,3 +231,81 @@ fun hexToColor(hex: String): Color = try {
 
 /** 하단 네비게이션 아이템 데이터 */
 data class BottomNavItem(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
+
+/** 알림 시뮬레이션 ON/OFF 토글 (알림함 상단에서 사용) */
+@Composable
+fun SimulationToggle(enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(if (enabled) Navy else Color.White)
+            .border(1.dp, if (enabled) Navy else LineColor, RoundedCornerShape(999.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(7.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(if (enabled) Gold else TextTertiary)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            if (enabled) "시뮬레이션 ON" else "시뮬레이션 OFF",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (enabled) Color.White else TextSecondary
+        )
+    }
+}
+
+/** 방향성 매매신호 테스트 팝업 발동 버튼 */
+@Composable
+fun TestPopupChip(text: String, accent: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(accent.copy(alpha = 0.10f))
+            .border(1.dp, accent.copy(alpha = 0.35f), RoundedCornerShape(999.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = accent,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+    }
+}
+
+/** 실시간 시세(KIS) ON/OFF 토글 (내관심종목 상단에서 사용) */
+@Composable
+fun LivePriceToggle(enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(if (enabled) Color(0xFFEAF7EE) else Color.White)
+            .border(1.dp, if (enabled) Color(0xFF2FA84F) else LineColor, RoundedCornerShape(999.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 11.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(if (enabled) Color(0xFF2FA84F) else TextTertiary)
+        )
+        Spacer(Modifier.width(5.dp))
+        Text(
+            if (enabled) "실시간 시세 ON (KIS)" else "실시간 시세 OFF",
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (enabled) Color(0xFF2FA84F) else TextSecondary
+        )
+    }
+}
