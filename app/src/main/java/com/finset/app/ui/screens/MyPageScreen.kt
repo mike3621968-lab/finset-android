@@ -48,8 +48,7 @@ fun MyPageScreen(viewModel: MainViewModel, onEditStocks: () -> Unit) {
             )
             Spacer(Modifier.width(13.dp))
             Column {
-                Text("핀셋 사용자 님", fontSize = 15.5.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
-                Text("로컬 계정 (서버 미연동)", fontSize = 12.sp, color = TextTertiary)
+                Text("핀셋 찰리님", fontSize = 15.5.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
             }
         }
 
