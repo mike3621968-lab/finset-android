@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,11 +29,13 @@ fun OnboardingScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
     val stocks by viewModel.stocks.collectAsState()
     val interestedStocks = stocks.filter { it.isInterested }
 
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F7FA))
-            .verticalScrollFix()
+            .verticalScroll(scrollState)
             .padding(horizontal = 24.dp)
     ) {
         Spacer(Modifier.height(36.dp))
@@ -83,11 +87,4 @@ fun OnboardingScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
         }
         Spacer(Modifier.height(28.dp))
     }
-}
-
-// 간단한 verticalScroll 확장 (별도 import 없이 사용)
-@Composable
-private fun Modifier.verticalScrollFix(): Modifier {
-    val scrollState = androidx.compose.foundation.rememberScrollState()
-    return this.then(androidx.compose.foundation.verticalScroll(scrollState))
 }

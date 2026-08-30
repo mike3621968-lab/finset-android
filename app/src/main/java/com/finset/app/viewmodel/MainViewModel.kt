@@ -61,6 +61,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun getNews(id: Long) = repo.getNews(id)
+    suspend fun getStock(ticker: String) = repo.getStock(ticker)
 
     class Factory(private val application: Application) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
