@@ -8,10 +8,10 @@ object SeedData {
 
     // ── 1) 관심 카테고리 15개 ─────────────────────────────
     val categories: List<CategoryEntity> = listOf(
-        CategoryEntity("all",          "전체속보",        isInterested = true),
-        CategoryEntity("fed",          "연준(Fed)",       isInterested = true),
+        CategoryEntity("all",          "전체속보"),
+        CategoryEntity("fed",          "연준(Fed)"),
         CategoryEntity("rates",        "금리·인플레이션"),
-        CategoryEntity("trump",        "트럼프",          isInterested = true),
+        CategoryEntity("trump",        "트럼프"),
         CategoryEntity("tariff",       "관세·무역"),
         CategoryEntity("geopolitics",  "지정학·이란"),
         CategoryEntity("china",        "중국"),
@@ -27,17 +27,17 @@ object SeedData {
 
     // ── 2) 관심 종목 유니버스 20개 ─────────────────────────
     val stocks: List<StockEntity> = listOf(
-        StockEntity("SPX",  "S&P500",           "index", "#EAF1FB", "#1D4E8C", "5,847.66", "+0.42%", true,  isInterested = true),
+        StockEntity("SPX",  "S&P500",           "index", "#EAF1FB", "#1D4E8C", "5,847.66", "+0.42%", true),
         StockEntity("NDX",  "나스닥100",         "index", "#EAF1FB", "#1D4E8C", "20,412.30", "+0.55%", true),
-        StockEntity("QQQ",  "Invesco QQQ",      "etf",   "#EAF1FB", "#1D4E8C", "498.31",   "+0.67%", true,  isInterested = true),
+        StockEntity("QQQ",  "Invesco QQQ",      "etf",   "#EAF1FB", "#1D4E8C", "498.31",   "+0.67%", true),
         StockEntity("SPY",  "SPDR S&P500 ETF",   "etf",   "#EAF1FB", "#1D4E8C", "584.12",   "+0.41%", true),
         StockEntity("DIA",  "다우존스 ETF",       "etf",   "#EAF1FB", "#1D4E8C", "412.05",   "+0.18%", true),
         StockEntity("IWM",  "러셀2000 ETF",       "etf",   "#EAF1FB", "#1D4E8C", "221.87",   "-0.22%", false),
         StockEntity("VIX",  "변동성 지수",         "index", "#EAF1FB", "#1D4E8C", "14.22",    "-2.10%", false),
         StockEntity("AAPL", "애플",               "stock", "#EAF1FB", "#1D4E8C", "228.40",   "+0.36%", true),
         StockEntity("MSFT", "마이크로소프트",       "stock", "#EAF1FB", "#1D4E8C", "441.58",   "+0.29%", true),
-        StockEntity("NVDA", "엔비디아",            "stock", "#FFF6E0", "#B57900", "187.42",   "+1.15%", true,  isInterested = true),
-        StockEntity("TSLA", "테슬라",              "stock", "#FDEBEA", "#C23B3B", "248.09",   "+1.87%", true,  isInterested = true),
+        StockEntity("NVDA", "엔비디아",            "stock", "#FFF6E0", "#B57900", "187.42",   "+1.15%", true),
+        StockEntity("TSLA", "테슬라",              "stock", "#FDEBEA", "#C23B3B", "248.09",   "+1.87%", true),
         StockEntity("AMZN", "아마존",              "stock", "#FFF6E0", "#B57900", "197.63",   "+0.52%", true),
         StockEntity("GOOGL","알파벳(구글)",         "stock", "#EAF1FB", "#1D4E8C", "176.28",   "-0.14%", false),
         StockEntity("META", "메타",                "stock", "#FDEBEA", "#C23B3B", "563.40",   "+0.88%", true),

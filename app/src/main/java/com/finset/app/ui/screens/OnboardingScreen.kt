@@ -28,7 +28,6 @@ import com.finset.app.viewmodel.MainViewModel
 fun OnboardingScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
     val categories by viewModel.categories.collectAsState()
     val stocks by viewModel.stocks.collectAsState()
-    val interestedStocks = stocks.filter { it.isInterested }
 
     val scrollState = rememberScrollState()
 
@@ -64,13 +63,22 @@ fun OnboardingScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
         }
 
         Spacer(Modifier.height(20.dp))
-        Text("관심 종목", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF12203D))
+        Text("관심 종목 (다중 선택)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF12203D))
         Spacer(Modifier.height(10.dp))
-        Text(
-            if (interestedStocks.isEmpty()) "관심 종목이 아직 없어요 (관심종목 화면에서 추가할 수 있어요)"
-            else interestedStocks.joinToString(" · ") { it.name },
-            fontSize = 12.5.sp, color = TextSecondary
-        )
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 110.dp),
+            modifier = Modifier.height(280.dp)
+        ) {
+            items(stocks, key = { it.ticker }) { stock ->
+                Box(modifier = Modifier.padding(4.dp)) {
+                    FinChip(
+                        text = "${stock.name} (${stock.ticker})",
+                        selected = stock.isInterested,
+                        onClick = { viewModel.toggleStockInterest(stock) }
+                    )
+                }
+            }
+        }
 
         Spacer(Modifier.height(32.dp))
         Button(
