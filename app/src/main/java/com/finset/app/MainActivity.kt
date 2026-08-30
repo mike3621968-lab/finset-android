@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +33,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.finset.app.notification.NotificationHelper
 import com.finset.app.ui.components.BottomNavItem
+import com.finset.app.ui.components.TradeSignalPopupDialog
 import com.finset.app.ui.navigation.Routes
 import com.finset.app.ui.screens.*
 import com.finset.app.ui.theme.FinSetTheme
@@ -193,6 +195,19 @@ fun FinSetApp(viewModel: MainViewModel, initialDeepLink: DeepLink? = null) {
                 NewsDetailScreen(viewModel, newsId, onBack = { navController.popBackStack() })
             }
         }
+    }
+
+    // 상승/하락 진입·청산 시그널 발생 시 - 어떤 화면에 있든 눈에 띄는 팝업으로 표시
+    val popup by viewModel.popupEvent.collectAsState()
+    popup?.let { p ->
+        TradeSignalPopupDialog(
+            popup = p,
+            onDismiss = { viewModel.consumePopup() },
+            onViewDetail = {
+                viewModel.consumePopup()
+                navController.navigate(Routes.stockDetail(p.ticker))
+            }
+        )
     }
 }
 
