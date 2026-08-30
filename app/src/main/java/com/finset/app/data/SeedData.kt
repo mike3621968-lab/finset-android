@@ -147,49 +147,79 @@ object SeedData {
         return list
     }
 
-    // ── 4) 옵션 파생 데이터 샘플 (관심 종목 중 일부) ─────────
-    val optionMetrics: List<OptionMetricsEntity> = listOf(
-        OptionMetricsEntity(
-            ticker = "NVDA",
-            gammaExposure = "+4.2B", deltaExposure = "-1.8B",
-            zeroGamma = "$182.50", volatilityTrigger = "$179.00",
-            putWall = "$170", callWall = "$195",
-            putWallPercent = 22, currentPercent = 55, callWallPercent = 82,
-            expertNote = "감마 포지티브 구간 진입으로 변동성 축소가 예상됩니다. $182.50 제로감마 상단에서는 딜러의 매수 헤지가 " +
-                "주가를 지지할 가능성이 높습니다.",
-            updatedAt = "오늘 08:30 업데이트"
-        ),
-        OptionMetricsEntity(
-            ticker = "SPX",
-            gammaExposure = "+9.6B", deltaExposure = "+2.1B",
-            zeroGamma = "5,760", volatilityTrigger = "5,700",
-            putWall = "5,600", callWall = "5,950",
-            putWallPercent = 20, currentPercent = 58, callWallPercent = 84,
-            expertNote = "지수 전체적으로 감마 포지티브 레짐이 유지되고 있어 단기 변동성은 제한적일 전망입니다. 5,950 콜월 부근에서 " +
-                "상단 저항이 예상됩니다.",
-            updatedAt = "오늘 08:30 업데이트"
-        ),
-        OptionMetricsEntity(
-            ticker = "TSLA",
-            gammaExposure = "-2.4B", deltaExposure = "-0.9B",
-            zeroGamma = "$240.00", volatilityTrigger = "$252.00",
-            putWall = "$220", callWall = "$270",
-            putWallPercent = 26, currentPercent = 48, callWallPercent = 88,
-            expertNote = "감마 네거티브 구간으로, 가격 변동에 따라 딜러 헤지가 방향성을 증폭시킬 수 있어 상대적으로 높은 " +
-                "변동성이 예상됩니다.",
-            updatedAt = "오늘 08:30 업데이트"
-        ),
-        OptionMetricsEntity(
-            ticker = "QQQ",
-            gammaExposure = "+3.1B", deltaExposure = "+0.7B",
-            zeroGamma = "$489.00", volatilityTrigger = "$482.00",
-            putWall = "$470", callWall = "$510",
-            putWallPercent = 24, currentPercent = 60, callWallPercent = 80,
-            expertNote = "감마 포지티브 구간에서 안정적인 흐름이 예상되며, 510 콜월까지는 뚜렷한 저항 없이 완만한 상승이 가능해 " +
-                "보입니다.",
-            updatedAt = "오늘 08:30 업데이트"
-        ),
-    )
+    // ── 4) 옵션 파생 데이터 (관심종목 유니버스 20개 전체) ─────
+    val optionMetrics: List<OptionMetricsEntity> by lazy { buildOptionMetrics() }
+
+    private fun buildOptionMetrics(): List<OptionMetricsEntity> {
+        fun note(regime: String, extra: String) = if (regime == "positive")
+            "감마 포지티브 구간에 위치해 있어 단기 변동성이 제한적일 것으로 예상됩니다. $extra"
+        else
+            "감마 네거티브 구간으로, 가격 변동에 따라 딜러 헤지가 방향성을 증폭시킬 수 있어 상대적으로 높은 변동성이 예상됩니다. $extra"
+
+        // ticker to (price, gex, dex, zeroGamma, volTrigger, putWall, callWall, regime)
+        data class M(
+            val ticker: String, val gex: String, val dex: String,
+            val zeroGamma: String, val volTrigger: String,
+            val putWall: String, val callWall: String,
+            val putPct: Int, val curPct: Int, val callPct: Int,
+            val regime: String, val extraNote: String
+        )
+
+        val rows = listOf(
+            M("SPX", "+9.6B", "+2.1B", "5,760", "5,700", "5,600", "5,950", 20, 58, 84, "positive",
+                "5,950 콜월 부근에서 상단 저항이 예상됩니다."),
+            M("NDX", "+7.2B", "+1.4B", "20,100", "19,850", "19,500", "20,900", 22, 56, 82, "positive",
+                "빅테크 실적 발표를 앞두고 콜월 부근 변동성 확대 가능성이 있습니다."),
+            M("QQQ", "+3.1B", "+0.7B", "$489.00", "$482.00", "$470", "$510", 24, 60, 80, "positive",
+                "510 콜월까지는 뚜렷한 저항 없이 완만한 상승이 가능해 보입니다."),
+            M("SPY", "+5.4B", "+1.1B", "$576.00", "$568.00", "$560", "$598", 21, 57, 83, "positive",
+                "지수 ETF 특성상 SPX와 유사한 흐름을 보일 가능성이 높습니다."),
+            M("DIA", "+2.0B", "+0.4B", "$408.00", "$402.00", "$395", "$425", 23, 54, 81, "positive",
+                "경기민감주 비중이 높아 매크로 지표 발표에 민감하게 반응할 수 있습니다."),
+            M("IWM", "-1.1B", "-0.3B", "$225.00", "$230.00", "$205", "$238", 28, 47, 90, "negative",
+                "소형주 특성상 변동성이 상대적으로 크게 나타날 수 있습니다."),
+            M("VIX", "-0.6B", "-0.2B", "15.20", "16.50", "12.00", "22.00", 30, 42, 92, "negative",
+                "변동성 지수 특성상 역방향 해석이 필요합니다 - 낮을수록 시장 안정을 의미합니다."),
+            M("AAPL", "+2.8B", "+0.6B", "$225.00", "$220.00", "$210", "$238", 24, 59, 81, "positive",
+                "실적 시즌 전까지는 박스권 흐름이 예상됩니다."),
+            M("MSFT", "+3.6B", "+0.8B", "$436.00", "$428.00", "$415", "$455", 23, 58, 82, "positive",
+                "클라우드 부문 성장세가 지속되며 안정적인 흐름이 예상됩니다."),
+            M("NVDA", "+4.2B", "-1.8B", "$182.50", "$179.00", "$170", "$195", 22, 55, 82, "positive",
+                "$182.50 제로감마 상단에서는 딜러의 매수 헤지가 주가를 지지할 가능성이 높습니다."),
+            M("TSLA", "-2.4B", "-0.9B", "$240.00", "$252.00", "$220", "$270", 26, 48, 88, "negative",
+                "인도량 발표 등 이벤트 리스크에 따라 변동성이 커질 수 있습니다."),
+            M("AMZN", "+2.1B", "+0.5B", "$195.00", "$190.00", "$180", "$205", 25, 57, 83, "positive",
+                "실적 발표 전까지 완만한 상승 흐름이 예상됩니다."),
+            M("GOOGL", "-0.8B", "-0.2B", "$178.00", "$182.00", "$165", "$190", 27, 46, 87, "negative",
+                "규제 이슈 관련 헤드라인에 따라 변동성이 확대될 수 있습니다."),
+            M("META", "+3.3B", "+0.9B", "$558.00", "$548.00", "$530", "$585", 23, 59, 81, "positive",
+                "광고 매출 성장세가 지속되며 안정적인 흐름이 예상됩니다."),
+            M("NFLX", "-1.5B", "-0.4B", "$695.00", "$705.00", "$650", "$730", 27, 45, 89, "negative",
+                "구독자 지표 발표에 따라 단기 변동성이 확대될 수 있습니다."),
+            M("AMD", "-0.9B", "-0.3B", "$145.00", "$150.00", "$130", "$158", 26, 47, 88, "negative",
+                "반도체 업황 관련 뉴스에 민감하게 반응할 수 있습니다."),
+            M("AVGO", "+2.6B", "+0.6B", "$165.00", "$160.00", "$150", "$178", 24, 58, 82, "positive",
+                "AI 반도체 수요 확대 기대감이 반영되어 있습니다."),
+            M("PLTR", "-1.8B", "-0.6B", "$36.50", "$39.00", "$30", "$44", 29, 44, 91, "negative",
+                "고평가 논란과 함께 변동성이 큰 구간입니다."),
+            M("COIN", "-2.2B", "-0.7B", "$208.00", "$218.00", "$185", "$235", 28, 46, 90, "negative",
+                "가상자산 가격 변동에 연동되어 높은 변동성을 보일 수 있습니다."),
+            M("MU", "+1.9B", "+0.4B", "$102.00", "$99.00", "$92", "$112", 25, 56, 83, "positive",
+                "메모리 반도체 업황 개선 기대감이 반영되어 있습니다."),
+        )
+
+        return rows.map { r ->
+            OptionMetricsEntity(
+                ticker = r.ticker,
+                gammaExposure = r.gex, deltaExposure = r.dex,
+                zeroGamma = r.zeroGamma, volatilityTrigger = r.volTrigger,
+                putWall = r.putWall, callWall = r.callWall,
+                putWallPercent = r.putPct, currentPercent = r.curPct, callWallPercent = r.callPct,
+                expertNote = note(r.regime, r.extraNote),
+                updatedAt = "오늘 08:30 업데이트"
+            )
+        }
+    }
 
     // ── 5) 알림함 샘플 ────────────────────────────────────
     val alerts: List<AlertEntity> = listOf(

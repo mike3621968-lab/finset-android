@@ -1,5 +1,6 @@
 package com.finset.app.ui.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,15 +15,58 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finset.app.data.NewsEntity
 import com.finset.app.data.StockEntity
 import com.finset.app.ui.theme.*
 
-/** 선택 가능한 칩 (카테고리, 필터 등에서 공용으로 사용) */
+/** 핀셋(FinSet) 브랜드 마크 - 트위저가 골드 포인트를 집는 로고를 Canvas로 직접 그림 */
+@Composable
+fun FinSetMark(
+    modifier: Modifier = Modifier,
+    markSize: Dp = 30.dp,
+    cornerRadius: Dp = 9.dp
+) {
+    Box(
+        modifier = modifier
+            .size(markSize)
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(Brush.linearGradient(listOf(Navy, Blue)))
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+
+            val leftProng = Path().apply {
+                moveTo(w * 0.5f, h * 0.16f)
+                cubicTo(w * 0.28f, h * 0.30f, w * 0.22f, h * 0.55f, w * 0.34f, h * 0.74f)
+            }
+            val rightProng = Path().apply {
+                moveTo(w * 0.5f, h * 0.16f)
+                cubicTo(w * 0.72f, h * 0.30f, w * 0.78f, h * 0.55f, w * 0.66f, h * 0.74f)
+            }
+            val strokeW = w * 0.09f
+
+            drawPath(leftProng, color = Color(0xFFF4F8FC), style = Stroke(width = strokeW, cap = StrokeCap.Round))
+            drawPath(rightProng, color = Color(0xFFF4F8FC), style = Stroke(width = strokeW, cap = StrokeCap.Round))
+            drawCircle(color = Color(0xFFFFB800), radius = w * 0.15f, center = Offset(w * 0.5f, h * 0.78f))
+            drawCircle(
+                color = Color(0xFFFFE9A8),
+                radius = w * 0.045f,
+                center = Offset(w * 0.44f, h * 0.745f)
+            )
+        }
+    }
+}
 @Composable
 fun FinChip(
     text: String,

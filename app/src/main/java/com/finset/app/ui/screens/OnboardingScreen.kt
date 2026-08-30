@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finset.app.ui.components.FinChip
+import com.finset.app.ui.components.FinSetMark
 import com.finset.app.ui.theme.Navy
 import com.finset.app.ui.theme.TextSecondary
 import com.finset.app.viewmodel.MainViewModel
@@ -39,12 +40,7 @@ fun OnboardingScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
             .padding(horizontal = 24.dp)
     ) {
         Spacer(Modifier.height(36.dp))
-        Box(
-            modifier = Modifier
-                .size(68.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(Navy)
-        )
+        FinSetMark(markSize = 68.dp, cornerRadius = 18.dp)
         Spacer(Modifier.height(18.dp))
         Text("핀셋에 오신 것을\n환영합니다", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF12203D))
         Spacer(Modifier.height(6.dp))

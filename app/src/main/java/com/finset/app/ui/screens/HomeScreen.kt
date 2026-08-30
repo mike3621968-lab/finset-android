@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finset.app.data.NewsEntity
 import com.finset.app.ui.components.FinChip
+import com.finset.app.ui.components.FinSetMark
 import com.finset.app.ui.components.NewsListItem
 import com.finset.app.ui.theme.*
 import com.finset.app.viewmodel.MainViewModel
@@ -41,12 +42,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(Brush.linearGradient(listOf(Navy, Blue)))
-                    )
+                    FinSetMark(markSize = 30.dp, cornerRadius = 9.dp)
                     Spacer(Modifier.width(8.dp))
                     Text("핀셋", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Navy)
                 }
