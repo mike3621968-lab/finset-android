@@ -66,9 +66,10 @@ fun HomeScreen(
             item {
                 Text(
                     liveConnectionError ?: "",
-                    fontSize = 10.5.sp,
+                    fontSize = 10.sp,
+                    lineHeight = 14.sp,
                     color = UpColor,
-                    modifier = Modifier.fillMaxWidth().padding(20.dp, 0.dp, 20.dp, 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(20.dp, 0.dp, 20.dp, 6.dp)
                 )
             }
         }

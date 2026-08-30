@@ -176,14 +176,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
         var anySuccess = false
+        var lastError: String? = null
         for (stock in targets) {
-            val live = kisRepo.fetchPrice(stock.ticker)
-            if (live != null) {
-                repo.updateStockPrice(stock, live.price, live.changePercent, live.isPositive)
-                anySuccess = true
-            }
+            runCatching { kisRepo.fetchPriceOrThrow(stock.ticker) }
+                .onSuccess { live ->
+                    repo.updateStockPrice(stock, live.price, live.changePercent, live.isPositive)
+                    anySuccess = true
+                }
+                .onFailure { e ->
+                    lastError = e.message
+                }
         }
-        _liveConnectionError.value = if (anySuccess) null else "시세 조회 실패 - APP KEY/SECRET 또는 네트워크를 확인해주세요"
+        _liveConnectionError.value = if (anySuccess) null else (lastError ?: "알 수 없는 오류")
     }
 
     private suspend fun simulateNewsTick() {

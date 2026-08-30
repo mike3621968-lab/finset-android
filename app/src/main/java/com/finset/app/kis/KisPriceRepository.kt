@@ -41,38 +41,59 @@ class KisPriceRepository(context: Context) {
 
     fun isSupported(ticker: String): Boolean = exchangeByTicker.containsKey(ticker)
 
-    suspend fun fetchPrice(ticker: String): LivePrice? {
-        val excd = exchangeByTicker[ticker] ?: return null
+    /** 실패 시 사유를 담은 예외를 던진다 (성공 시에만 LivePrice 반환) */
+    suspend fun fetchPriceOrThrow(ticker: String): LivePrice {
+        val excd = exchangeByTicker[ticker]
+            ?: throw IllegalArgumentException("미지원 종목: $ticker")
         val appKey = BuildConfig.KIS_APP_KEY
         val appSecret = BuildConfig.KIS_APP_SECRET
-        if (appKey.isBlank() || appSecret.isBlank()) return null
+        if (appKey.isBlank() || appSecret.isBlank()) {
+            throw IllegalStateException("APP KEY/SECRET이 비어있음 (local.properties 또는 GitHub Secrets 확인 필요)")
+        }
 
-        val token = tokenManager.getValidToken(appKey, appSecret) ?: return null
+        val token = tokenManager.getValidToken(appKey, appSecret) // 실패 시 여기서 상세 예외가 던져짐
 
-        return runCatching {
-            val res = api.getOverseasPrice(
+        val res = try {
+            api.getOverseasPrice(
                 authorization = "Bearer $token",
                 appKey = appKey,
                 appSecret = appSecret,
                 excd = excd,
                 symb = ticker
             )
-            if (!res.isSuccessful) return@runCatching null
-            val output = res.body()?.output ?: return@runCatching null
-            val last = output.last?.toDoubleOrNull() ?: return@runCatching null
-            val rate = output.rate?.toDoubleOrNull() ?: 0.0
-            val isPositive = when (output.sign) {
-                "1", "2" -> true
-                "4", "5" -> false
-                else -> rate >= 0.0
-            }
-            LivePrice(
-                price = formatPrice(last),
-                changePercent = "${if (isPositive) "+" else ""}${"%.2f".format(rate)}%",
-                isPositive = isPositive
-            )
-        }.getOrNull()
+        } catch (e: Exception) {
+            throw IllegalStateException("[$ticker] 시세 조회 네트워크 오류: ${e.message}")
+        }
+
+        if (!res.isSuccessful) {
+            val errBody = res.errorBody()?.string()
+            throw IllegalStateException("[$ticker] 시세 조회 실패 (HTTP ${res.code()}): ${errBody ?: res.message()}")
+        }
+
+        val body = res.body()
+        if (body?.resultCode != "0") {
+            throw IllegalStateException("[$ticker] KIS 응답 오류 (rt_cd=${body?.resultCode}): ${body?.message}")
+        }
+
+        val output = body.output
+            ?: throw IllegalStateException("[$ticker] 응답에 output 없음")
+        val last = output.last?.toDoubleOrNull()
+            ?: throw IllegalStateException("[$ticker] 가격 파싱 실패: last=${output.last}")
+        val rate = output.rate?.toDoubleOrNull() ?: 0.0
+        val isPositive = when (output.sign) {
+            "1", "2" -> true
+            "4", "5" -> false
+            else -> rate >= 0.0
+        }
+        return LivePrice(
+            price = formatPrice(last),
+            changePercent = "${if (isPositive) "+" else ""}${"%.2f".format(rate)}%",
+            isPositive = isPositive
+        )
     }
+
+    /** 기존 호출부 호환용 - 실패 시 null */
+    suspend fun fetchPrice(ticker: String): LivePrice? = runCatching { fetchPriceOrThrow(ticker) }.getOrNull()
 
     private fun formatPrice(value: Double): String {
         return if (value >= 1000) "%,.2f".format(value) else "%.2f".format(value)
