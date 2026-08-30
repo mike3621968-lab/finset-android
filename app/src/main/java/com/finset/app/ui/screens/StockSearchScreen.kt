@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -22,6 +23,7 @@ import com.finset.app.ui.components.StockRowItem
 import com.finset.app.ui.theme.*
 import com.finset.app.viewmodel.MainViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StockSearchScreen(viewModel: MainViewModel, onDone: () -> Unit) {
     val allStocks by viewModel.stocks.collectAsState()
