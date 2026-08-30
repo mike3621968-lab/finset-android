@@ -146,6 +146,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var livePriceJob: Job? = null
 
+    init {
+        // 실시간 시세는 기본으로 켜져있는 게 자연스러우니 앱 시작 시 자동으로 시작.
+        // (레이트리밋 등 문제 생기면 홈 화면 토글로 언제든 끌 수 있음)
+        startLivePrice()
+    }
+
     fun toggleLivePrice() {
         if (_livePriceEnabled.value) stopLivePrice() else startLivePrice()
     }
