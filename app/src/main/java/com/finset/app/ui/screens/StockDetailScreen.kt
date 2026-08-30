@@ -25,19 +25,13 @@ import com.finset.app.viewmodel.MainViewModel
 @Composable
 fun StockDetailScreen(viewModel: MainViewModel, ticker: String, onBack: () -> Unit) {
     val metrics by viewModel.optionMetricsFlow(ticker).collectAsState(initial = null)
-    var stockName by remember { mutableStateOf(ticker) }
-    var price by remember { mutableStateOf("") }
-    var change by remember { mutableStateOf("") }
-    var isPositive by remember { mutableStateOf(true) }
+    val allStocks by viewModel.stocks.collectAsState()
+    val stock = allStocks.find { it.ticker == ticker }
 
-    LaunchedEffect(ticker) {
-        viewModel.getStock(ticker)?.let {
-            stockName = it.name
-            price = it.price
-            change = it.changePercent
-            isPositive = it.isPositive
-        }
-    }
+    val stockName = stock?.name ?: ticker
+    val price = stock?.price ?: ""
+    val change = stock?.changePercent ?: ""
+    val isPositive = stock?.isPositive ?: true
 
     Column(modifier = Modifier.fillMaxSize().background(BgColor)) {
         FinTopBar(onBack = onBack)
