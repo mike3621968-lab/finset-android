@@ -128,9 +128,14 @@ object SeedData {
         )
         val sources = listOf("로이터", "블룸버그", "CNBC", "AP", "WSJ", "파이낸셜타임스", "마켓워치", "다우존스")
 
-        repeat(45) { i ->
-            val subject = subjects[i % subjects.size]
-            val title = templates[(i * 7) % templates.size](subject)
+        // 주제 x 템플릿 전체 조합(20 x 10 = 200가지)을 섞어서 중복 없이 45개를 뽑는다.
+        // (기존 방식은 i%subjects.size 와 (i*7)%templates.size 의 주기가 맞물려
+        //  20개마다 정확히 같은 조합이 반복되는 버그가 있었음)
+        val allCombos = subjects.flatMap { s -> templates.indices.map { t -> s to t } }
+        val chosenCombos = allCombos.shuffled().take(45)
+
+        chosenCombos.forEachIndexed { i, (subject, templateIdx) ->
+            val title = templates[templateIdx](subject)
             val source = sources[i % sources.size]
             val time = "${i * 4 + 45}분 전"
             val ticker = tickerBySubject[subject] ?: ""
@@ -209,12 +214,25 @@ object SeedData {
         )
 
         return rows.map { r ->
+            // positive 레짐: 현재가가 이미 제로감마 위쪽 → 제로감마는 현재보다 낮게, VT는 그보다 더 낮게(풋월 쪽)
+            // negative 레짐: 현재가가 이미 제로감마 아래쪽 → 제로감마는 현재보다 높게, VT는 그보다 더 높게(콜월 쪽)
+            val zgPct = if (r.regime == "positive")
+                (r.curPct - 12).coerceIn(r.putPct + 4, r.callPct - 4)
+            else
+                (r.curPct + 12).coerceIn(r.putPct + 4, r.callPct - 4)
+
+            val vtPct = if (r.regime == "positive")
+                (zgPct - 10).coerceIn(r.putPct + 2, r.callPct - 2)
+            else
+                (zgPct + 10).coerceIn(r.putPct + 2, r.callPct - 2)
+
             OptionMetricsEntity(
                 ticker = r.ticker,
                 gammaExposure = r.gex, deltaExposure = r.dex,
                 zeroGamma = r.zeroGamma, volatilityTrigger = r.volTrigger,
                 putWall = r.putWall, callWall = r.callWall,
                 putWallPercent = r.putPct, currentPercent = r.curPct, callWallPercent = r.callPct,
+                zeroGammaPercent = zgPct, volatilityTriggerPercent = vtPct,
                 expertNote = note(r.regime, r.extraNote),
                 updatedAt = "오늘 08:30 업데이트"
             )

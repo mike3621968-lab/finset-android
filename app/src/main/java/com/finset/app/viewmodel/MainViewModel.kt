@@ -74,29 +74,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _simulationEnabled = MutableStateFlow(false)
     val simulationEnabled: StateFlow<Boolean> = _simulationEnabled.asStateFlow()
 
-    private var simulationJob: Job? = null
-    private val lastZoneByTicker = mutableMapOf<String, String>()
+    private var newsJob: Job? = null
+    private var tradeJob: Job? = null
+    private val lastWallZone = mutableMapOf<String, String>()
+    private val lastVtState = mutableMapOf<String, String>()
+    private val regimeByTicker = mutableMapOf<String, String>() // "bull" | "bear"
 
     fun toggleSimulation() {
         if (_simulationEnabled.value) stopSimulation() else startSimulation()
     }
 
     private fun startSimulation() {
-        if (simulationJob != null) return
+        if (newsJob != null || tradeJob != null) return
         _simulationEnabled.value = true
-        simulationJob = viewModelScope.launch {
+
+        newsJob = viewModelScope.launch {
             while (true) {
-                delay(7000)
+                delay(17000)
                 runCatching { simulateNewsTick() }
-                delay(1500)
+            }
+        }
+        tradeJob = viewModelScope.launch {
+            while (true) {
+                delay(30000)
                 runCatching { simulateTradeTick() }
             }
         }
     }
 
     private fun stopSimulation() {
-        simulationJob?.cancel()
-        simulationJob = null
+        newsJob?.cancel()
+        newsJob = null
+        tradeJob?.cancel()
+        tradeJob = null
         _simulationEnabled.value = false
     }
 
@@ -128,41 +138,113 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun simulateTradeTick() {
         val candidates = interestedStocks.value
         if (candidates.isEmpty()) return
-        val stock = candidates.random()
-        val metrics = repo.getOptionMetricsOnce(stock.ticker) ?: return
-        if (!metrics.alertEnabled) return
 
-        val oldPct = metrics.currentPercent
-        val delta = Random.nextInt(-9, 10)
-        val newPct = (oldPct + delta).coerceIn(2, 98)
-        repo.updateOptionMetrics(metrics.copy(currentPercent = newPct))
+        for (stock in candidates) {
+            val metrics = repo.getOptionMetricsOnce(stock.ticker) ?: continue
+            if (!metrics.alertEnabled) continue
 
-        val oldZone = zoneOf(oldPct, metrics.putWallPercent, metrics.callWallPercent)
-        val newZone = zoneOf(newPct, metrics.putWallPercent, metrics.callWallPercent)
-        if (newZone == oldZone || newZone == "neutral") return
-        if (lastZoneByTicker[stock.ticker] == newZone) return
-        lastZoneByTicker[stock.ticker] = newZone
+            val oldPct = metrics.currentPercent
+            val delta = Random.nextInt(-16, 17)
+            val newPct = (oldPct + delta).coerceIn(2, 98)
+            if (newPct == oldPct) continue
+            repo.updateOptionMetrics(metrics.copy(currentPercent = newPct))
 
-        val (title, subtitle) = when (newZone) {
-            "call_near" -> "${stock.ticker} 콜월 근접 알림" to "현재 위치 ${newPct}% · 콜월(${metrics.callWall})까지 근접 - 진입 신호 주의"
-            "call_breach" -> "${stock.ticker} 콜월 돌파" to "콜월(${metrics.callWall})을 돌파했습니다 - 청산/익절 검토 구간"
-            "put_near" -> "${stock.ticker} 풋월 근접 알림" to "현재 위치 ${newPct}% · 풋월(${metrics.putWall})까지 근접 - 리스크 관리 필요"
-            else -> "${stock.ticker} 풋월 이탈" to "풋월(${metrics.putWall})을 이탈했습니다 - 손절/헷지 검토 구간"
+            val ticker = stock.ticker
+            val putPct = metrics.putWallPercent
+            val callPct = metrics.callWallPercent
+            val zgPct = metrics.zeroGammaPercent
+            val vtPct = metrics.volatilityTriggerPercent
+
+            // ① 풋월/콜월 근접·돌파
+            val oldWallZone = wallZoneOf(oldPct, putPct, callPct)
+            val newWallZone = wallZoneOf(newPct, putPct, callPct)
+            if (newWallZone != oldWallZone && newWallZone != "neutral" && lastWallZone[ticker] != newWallZone) {
+                lastWallZone[ticker] = newWallZone
+                val (title, body) = when (newWallZone) {
+                    "call_near" -> "$ticker 콜월 근접 알림" to "현재 위치 ${newPct}% · 콜월(${metrics.callWall})까지 근접"
+                    "call_breach" -> "$ticker 콜월 돌파" to "콜월(${metrics.callWall})을 돌파했습니다"
+                    "put_near" -> "$ticker 풋월 근접 알림" to "현재 위치 ${newPct}% · 풋월(${metrics.putWall})까지 근접"
+                    else -> "$ticker 풋월 이탈" to "풋월(${metrics.putWall})을 이탈했습니다"
+                }
+                fireTradeAlert(ticker, title, body)
+            }
+
+            // ② VT(Volatility Trigger) 근접·이탈
+            val vtNearBefore = kotlin.math.abs(oldPct - vtPct) <= 5
+            val vtNearAfter = kotlin.math.abs(newPct - vtPct) <= 5
+            if (vtNearAfter && !vtNearBefore && lastVtState[ticker] != "near") {
+                lastVtState[ticker] = "near"
+                fireTradeAlert(
+                    ticker, "$ticker VT 근접 알림",
+                    "현재 위치 ${newPct}% · Volatility Trigger(${metrics.volatilityTrigger}) 근접 - 변동성 확대 가능성 주시"
+                )
+            }
+            val vtSideBefore = oldPct >= vtPct
+            val vtSideAfter = newPct >= vtPct
+            if (vtSideAfter != vtSideBefore) {
+                val stateKey = if (vtSideAfter) "breach_up" else "breach_down"
+                if (lastVtState[ticker] != stateKey) {
+                    lastVtState[ticker] = stateKey
+                    fireTradeAlert(
+                        ticker, "$ticker VT 이탈 알림",
+                        "Volatility Trigger(${metrics.volatilityTrigger})를 이탈했습니다 - 변동성 레짐 전환 가능성"
+                    )
+                }
+            }
+
+            // ③ 제로감마 통과 → 진입 시그널 (방향에 따라 이후 레짐을 기억해뒀다가 ④ 청산 시그널에 사용)
+            val zgSideBefore = oldPct >= zgPct
+            val zgSideAfter = newPct >= zgPct
+            if (zgSideAfter != zgSideBefore) {
+                if (zgSideAfter) {
+                    if (regimeByTicker[ticker] != "bull") {
+                        regimeByTicker[ticker] = "bull"
+                        fireTradeAlert(
+                            ticker, "$ticker 상승진입 시그널",
+                            "제로감마(${metrics.zeroGamma}) 상향 돌파 - 롱 진입 유리한 구간 진입"
+                        )
+                    }
+                } else {
+                    if (regimeByTicker[ticker] != "bear") {
+                        regimeByTicker[ticker] = "bear"
+                        fireTradeAlert(
+                            ticker, "$ticker 하락진입 시그널",
+                            "제로감마(${metrics.zeroGamma}) 하향 이탈 - 숏 진입 유리한 구간 진입"
+                        )
+                    }
+                }
+            }
+
+            // ④ 진입 이후 반대편 월 도달 → 청산 시그널
+            if (newWallZone == "call_breach" && oldWallZone != "call_breach" && regimeByTicker[ticker] == "bull") {
+                fireTradeAlert(
+                    ticker, "$ticker 상승청산 시그널",
+                    "콜월(${metrics.callWall}) 도달 - 보유 롱 포지션 익절/청산 검토"
+                )
+            }
+            if (newWallZone == "put_breach" && oldWallZone != "put_breach" && regimeByTicker[ticker] == "bear") {
+                fireTradeAlert(
+                    ticker, "$ticker 하락청산 시그널",
+                    "풋월(${metrics.putWall}) 도달 - 보유 숏 포지션 청산(커버) 검토"
+                )
+            }
         }
+    }
 
+    private suspend fun fireTradeAlert(ticker: String, title: String, subtitle: String) {
         repo.insertAlert(
             AlertEntity(
                 type = "trade",
                 title = title,
                 subtitle = subtitle,
                 timeLabel = "방금 전",
-                relatedTicker = stock.ticker
+                relatedTicker = ticker
             )
         )
-        NotificationHelper.notifyTrade(context = getApplication(), ticker = stock.ticker, title = title, body = subtitle)
+        NotificationHelper.notifyTrade(context = getApplication(), ticker = ticker, title = title, body = subtitle)
     }
 
-    private fun zoneOf(pct: Int, putPct: Int, callPct: Int): String = when {
+    private fun wallZoneOf(pct: Int, putPct: Int, callPct: Int): String = when {
         pct <= putPct -> "put_breach"
         pct <= putPct + 6 -> "put_near"
         pct >= callPct -> "call_breach"

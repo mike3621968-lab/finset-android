@@ -48,6 +48,8 @@ data class OptionMetricsEntity(
     val putWallPercent: Int,     // 0~100, 트랙 상 위치
     val currentPercent: Int,
     val callWallPercent: Int,
+    val zeroGammaPercent: Int,   // 0~100, 제로감마 트랙 상 위치 (진입 시그널 판정용)
+    val volatilityTriggerPercent: Int, // 0~100, VT 트랙 상 위치 (VT 근접/이탈 판정용)
     val expertNote: String,
     val updatedAt: String,
     val alertEnabled: Boolean = true
