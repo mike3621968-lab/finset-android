@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.sp
 import com.finset.app.data.AlertEntity
 import com.finset.app.ui.components.FinChip
 import com.finset.app.ui.components.FinTopBar
+import com.finset.app.ui.components.SimulationToggle
+import com.finset.app.ui.components.TestPopupChip
 import com.finset.app.ui.theme.*
 import com.finset.app.viewmodel.MainViewModel
 
@@ -27,6 +29,7 @@ fun AlertsScreen(
     onAlertClick: (AlertEntity) -> Unit
 ) {
     val alerts by viewModel.alerts.collectAsState()
+    val simulationEnabled by viewModel.simulationEnabled.collectAsState()
     var filter by remember { mutableStateOf("all") } // all | news | trade
 
     val filtered = when (filter) {
@@ -36,7 +39,25 @@ fun AlertsScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize().background(BgColor)) {
-        FinTopBar(title = "알림함")
+        FinTopBar(
+            title = "알림함",
+            trailing = {
+                SimulationToggle(enabled = simulationEnabled, onClick = { viewModel.toggleSimulation() })
+            }
+        )
+
+        if (simulationEnabled) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(20.dp, 0.dp, 20.dp, 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                TestPopupChip("상승진입", UpColor, Modifier.weight(1f)) { viewModel.fireTestPopup("bull_entry") }
+                TestPopupChip("하락진입", DownColor, Modifier.weight(1f)) { viewModel.fireTestPopup("bear_entry") }
+                TestPopupChip("상승청산", UpColor, Modifier.weight(1f)) { viewModel.fireTestPopup("bull_exit") }
+                TestPopupChip("하락청산", DownColor, Modifier.weight(1f)) { viewModel.fireTestPopup("bear_exit") }
+            }
+        }
+
         Row(
             modifier = Modifier.padding(20.dp, 4.dp, 20.dp, 6.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.finset.app.data.StockEntity
 import com.finset.app.ui.components.FinTopBar
+import com.finset.app.ui.components.LivePriceToggle
 import com.finset.app.ui.components.StockRowItem
 import com.finset.app.ui.theme.*
 import com.finset.app.viewmodel.MainViewModel
@@ -30,6 +31,8 @@ fun StockListScreen(
     onAddClick: () -> Unit
 ) {
     val stocks by viewModel.interestedStocks.collectAsState()
+    val livePriceEnabled by viewModel.livePriceEnabled.collectAsState()
+    val liveConnectionError by viewModel.liveConnectionError.collectAsState()
     var editMode by remember { mutableStateOf(startInEditMode) }
 
     Column(modifier = Modifier.fillMaxSize().background(BgColor)) {
@@ -43,6 +46,22 @@ fun StockListScreen(
                 }
             }
         )
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(20.dp, 0.dp, 20.dp, 4.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            LivePriceToggle(enabled = livePriceEnabled, onClick = { viewModel.toggleLivePrice() })
+        }
+        if (livePriceEnabled && liveConnectionError != null) {
+            Text(
+                liveConnectionError ?: "",
+                fontSize = 10.sp,
+                lineHeight = 14.sp,
+                color = UpColor,
+                modifier = Modifier.fillMaxWidth().padding(20.dp, 0.dp, 20.dp, 6.dp)
+            )
+        }
 
         Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp).fillMaxWidth()
             .clip(RoundedCornerShape(12.dp)).background(Color.White)
