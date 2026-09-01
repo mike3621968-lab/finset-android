@@ -28,7 +28,7 @@ class FinSetRepository(private val db: AppDatabase) {
     fun observeAllNews(): Flow<List<NewsEntity>> = db.newsDao().observeAllNews()
     suspend fun getNews(id: Long): NewsEntity? = db.newsDao().getById(id)
     suspend fun getUnmatchedNews(): List<NewsEntity> = db.newsDao().getUnmatchedOnce()
-    suspend fun markNewsMatched(id: Long) = db.newsDao().markMatched(id)
+    suspend fun markNewsMatched(id: Long) = db.newsDao().markMatched(id, System.currentTimeMillis())
 
     // 옵션 지표
     fun observeOptionMetrics(ticker: String): Flow<OptionMetricsEntity?> = db.optionMetricsDao().observeByTicker(ticker)

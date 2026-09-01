@@ -51,10 +51,10 @@ interface NewsDao {
     @Query("SELECT * FROM news WHERE isFeatured = 1 ORDER BY id ASC")
     fun observeFeatured(): Flow<List<NewsEntity>>
 
-    @Query("SELECT * FROM news WHERE isFeatured = 0 AND isMatched = 1 ORDER BY id ASC")
+    @Query("SELECT * FROM news WHERE isFeatured = 0 AND isMatched = 1 ORDER BY matchedAt DESC")
     fun observeMyNews(): Flow<List<NewsEntity>>
 
-    @Query("SELECT * FROM news WHERE isFeatured = 0 ORDER BY id ASC")
+    @Query("SELECT * FROM news WHERE isFeatured = 0 ORDER BY id DESC")
     fun observeAllNews(): Flow<List<NewsEntity>>
 
     @Query("SELECT * FROM news WHERE id = :id LIMIT 1")
@@ -63,8 +63,8 @@ interface NewsDao {
     @Query("SELECT * FROM news WHERE isFeatured = 0 AND isMatched = 0")
     suspend fun getUnmatchedOnce(): List<NewsEntity>
 
-    @Query("UPDATE news SET isMatched = 1 WHERE id = :id")
-    suspend fun markMatched(id: Long)
+    @Query("UPDATE news SET isMatched = 1, matchedAt = :matchedAt WHERE id = :id")
+    suspend fun markMatched(id: Long, matchedAt: Long)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(news: List<NewsEntity>)

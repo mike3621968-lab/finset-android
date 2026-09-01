@@ -33,7 +33,8 @@ data class NewsEntity(
     val body: String,
     val tickers: String,       // comma separated tickers
     val isFeatured: Boolean = false,  // 오늘의 주요뉴스 카드용
-    val isMatched: Boolean = false    // 내 관심에 매칭되는지
+    val isMatched: Boolean = false,   // 내 관심에 매칭되는지
+    val matchedAt: Long = 0L          // 실제로 매칭된 시각 (최신순 정렬용, epoch millis)
 )
 
 @Entity(tableName = "option_metrics")
