@@ -149,6 +149,39 @@ object SeedData {
             )
         }
 
+        // ── 찌라시(미확인 루머) 뉴스 20개 ──
+        // 제목에 [찌라시]를 붙여 정식 보도와 명확히 구분되도록 함.
+        val rumorTemplates: List<(String) -> String> = listOf(
+            { s -> "[찌라시] $s 대규모 인수설 솔솔... 조회공시 임박?" },
+            { s -> "[찌라시] $s 내부자 매도설 확산, 진위 파악 중" },
+            { s -> "[찌라시] $s CEO 사임설 급부상" },
+            { s -> "[찌라시] $s 실적 어닝쇼크 루머 확산" },
+            { s -> "[찌라시] $s 대형 계약 파기설... 소문만 무성" },
+            { s -> "[찌라시] $s 상장폐지설 재점화, 사실무근 가능성" },
+            { s -> "[찌라시] $s 대주주 지분 매각 정황 포착됐다는 루머" },
+            { s -> "[찌라시] $s 규제 리스크 확대설, 커뮤니티 중심 확산" },
+            { s -> "[찌라시] $s 신제품 출시 연기설" },
+            { s -> "[찌라시] $s 회계 이슈 루머, 회사 측 \"노코멘트\"" },
+        )
+        val rumorSources = listOf("커뮤니티 지라시", "익명 제보", "사설 리서치방", "SNS 루머", "미확인 소식통")
+
+        val rumorCombos = subjects.flatMap { s -> rumorTemplates.indices.map { t -> s to t } }
+            .shuffled().take(20)
+
+        rumorCombos.forEachIndexed { i, (subject, templateIdx) ->
+            val title = rumorTemplates[templateIdx](subject)
+            val source = rumorSources[i % rumorSources.size]
+            val time = "${i * 3 + 30}분 전"
+            val ticker = tickerBySubject[subject] ?: ""
+            val body = "$subject 관련하여 미확인 루머가 온라인 커뮤니티와 사설 리서치방을 중심으로 확산되고 있다.\n\n" +
+                "⚠️ 이 내용은 공식적으로 확인되지 않은 루머성 정보입니다. 사실 관계가 검증되지 않았으니 투자 판단에 " +
+                "신중을 기해야 하며, 공식 공시나 신뢰할 수 있는 언론 보도를 통해 재확인하시기 바랍니다."
+            list += NewsEntity(
+                tag = subject, title = title, source = source, timeLabel = time,
+                body = body, tickers = ticker, isFeatured = false, isMatched = false
+            )
+        }
+
         return list
     }
 
