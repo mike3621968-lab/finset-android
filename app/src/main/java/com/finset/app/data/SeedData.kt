@@ -137,7 +137,7 @@ object SeedData {
         chosenCombos.forEachIndexed { i, (subject, templateIdx) ->
             val title = templates[templateIdx](subject)
             val source = sources[i % sources.size]
-            val time = "${i * 4 + 45}분 전"
+            val time = "${(chosenCombos.size - 1 - i) * 4 + 45}분 전"
             val ticker = tickerBySubject[subject] ?: ""
             val body = "$subject 관련 소식이 전해지며 시장의 관심이 집중되고 있다. 관련 업계 관계자들은 이번 흐름이 단기적인 이슈에 " +
                 "그칠지, 추세적인 변화로 이어질지 주시하고 있다고 밝혔다.\n\n" +
@@ -171,7 +171,7 @@ object SeedData {
         rumorCombos.forEachIndexed { i, (subject, templateIdx) ->
             val title = rumorTemplates[templateIdx](subject)
             val source = rumorSources[i % rumorSources.size]
-            val time = "${i * 3 + 30}분 전"
+            val time = "${(rumorCombos.size - 1 - i) * 3 + 30}분 전"
             val ticker = tickerBySubject[subject] ?: ""
             val body = "$subject 관련하여 미확인 루머가 온라인 커뮤니티와 사설 리서치방을 중심으로 확산되고 있다.\n\n" +
                 "⚠️ 이 내용은 공식적으로 확인되지 않은 루머성 정보입니다. 사실 관계가 검증되지 않았으니 투자 판단에 " +
