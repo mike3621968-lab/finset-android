@@ -41,7 +41,7 @@ import com.finset.app.ui.theme.Navy
 import com.finset.app.viewmodel.MainViewModel
 
 /** 알림 탭으로 앱이 열렸을 때 어디로 이동할지 담는 간단한 딥링크 정보 */
-data class DeepLink(val type: String, val newsId: Long? = null, val ticker: String? = null)
+data class DeepLink(val type: String, val newsId: Long? = null, val ticker: String? = null, val nonce: Long = System.nanoTime())
 
 class MainActivity : ComponentActivity() {
 
@@ -49,7 +49,8 @@ class MainActivity : ComponentActivity() {
         MainViewModel.Factory(application)
     }
 
-    private var pendingDeepLink: DeepLink? = null
+    // Compose가 직접 구독하는 반응형 상태. recreate() 없이 onNewIntent에서 바로 갱신한다.
+    private val deepLinkState = mutableStateOf<DeepLink?>(null)
 
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* 결과는 무시 - 거부해도 앱은 정상 동작 */ }
@@ -62,11 +63,11 @@ class MainActivity : ComponentActivity() {
             requestNotificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
 
-        pendingDeepLink = extractDeepLink(intent)
+        deepLinkState.value = extractDeepLink(intent)
 
         setContent {
             FinSetTheme {
-                FinSetApp(viewModel, initialDeepLink = pendingDeepLink)
+                FinSetApp(viewModel, deepLink = deepLinkState.value)
             }
         }
     }
@@ -74,9 +75,8 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        // 앱이 이미 떠있는 상태에서 알림을 탭한 경우: 새 컴포지션 없이는 반영이 안 되므로
-        // 간단히 액티비티를 재시작해 새 딥링크를 반영한다.
-        recreate()
+        // recreate() 없이, 상태만 갱신 - Compose가 알아서 재구성(recompose)한다.
+        deepLinkState.value = extractDeepLink(intent)
     }
 
     private fun extractDeepLink(intent: Intent?): DeepLink? {
@@ -97,20 +97,22 @@ private val bottomNavItems = listOf(
 )
 
 @Composable
-fun FinSetApp(viewModel: MainViewModel, initialDeepLink: DeepLink? = null) {
+fun FinSetApp(viewModel: MainViewModel, deepLink: DeepLink? = null) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    var deepLinkConsumed by remember { mutableStateOf(false) }
 
-    LaunchedEffect(initialDeepLink) {
-        if (initialDeepLink != null && !deepLinkConsumed) {
-            deepLinkConsumed = true
-            when (initialDeepLink.type) {
-                "news" -> initialDeepLink.newsId?.let {
+    // 최초 컴포지션 시점의 딥링크 값만 시작화면 결정에 사용 (그래프는 한 번만 만들어지므로)
+    val initialDeepLink = remember { deepLink }
+
+    // deepLink 값이 바뀔 때마다(=새 알림을 탭할 때마다) 실행 - 앱이 이미 떠있는 상태에서도 동작
+    LaunchedEffect(deepLink) {
+        if (deepLink != null) {
+            when (deepLink.type) {
+                "news" -> deepLink.newsId?.let {
                     navController.navigate(Routes.newsDetail(it))
                 }
-                "trade" -> initialDeepLink.ticker?.let {
+                "trade" -> deepLink.ticker?.let {
                     navController.navigate(Routes.stockDetail(it))
                 }
             }
