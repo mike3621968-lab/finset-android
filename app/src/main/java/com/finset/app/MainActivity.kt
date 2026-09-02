@@ -108,11 +108,9 @@ fun FinSetApp(viewModel: MainViewModel, initialDeepLink: DeepLink? = null) {
             deepLinkConsumed = true
             when (initialDeepLink.type) {
                 "news" -> initialDeepLink.newsId?.let {
-                    navController.navigate(Routes.HOME) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
                     navController.navigate(Routes.newsDetail(it))
                 }
                 "trade" -> initialDeepLink.ticker?.let {
-                    navController.navigate(Routes.HOME) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
                     navController.navigate(Routes.stockDetail(it))
                 }
             }
@@ -144,7 +142,7 @@ fun FinSetApp(viewModel: MainViewModel, initialDeepLink: DeepLink? = null) {
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.ONBOARDING,
+            startDestination = if (initialDeepLink != null) Routes.HOME else Routes.ONBOARDING,
             modifier = Modifier.padding(padding).fillMaxSize()
         ) {
             composable(Routes.ONBOARDING) {
